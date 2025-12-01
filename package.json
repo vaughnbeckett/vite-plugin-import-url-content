@@ -1,5 +1,5 @@
 {
-  "name": "@vaughnbeckett/vite-plugin-template",
+  "name": "@vaughnbeckett/vite-plugin-import-url-content",
   "type": "module",
   "version": "0.1.0",
   "description": "Vite plugin template",

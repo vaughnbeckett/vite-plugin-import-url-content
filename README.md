@@ -1,9 +1,9 @@
-# @vaughnbeckett/vite-plugin-template
+# @vaughnbeckett/vite-plugin-import-url-content
 
 ## Install
 
 ```bash
-npm install @vaughnbeckett/vite-plugin-template
+npm install @vaughnbeckett/vite-plugin-import-url-content
 ```
 
 Go to `example` folder, add your plugin, and start develop.
@@ -11,16 +11,14 @@ Go to `example` folder, add your plugin, and start develop.
 ```ts
 // example/vite.config.ts
 
-import VitePlugin from '@vaughnbeckett/vite-plugin-template'
+import { importUrlContent } from '@vaughnbeckett/vite-plugin-import-url-content'
 export default {
   plugins: [
-      VitePlugin()
+      importUrlContent()
   ],
 }
 
 ```
-
-Don't forget edit your `README.md` and the infos in `package.json`
 
 ## License
 

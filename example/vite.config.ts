@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite'
 import Vue from '@vitejs/plugin-vue'
-import { VitePlugin } from '@vaughnbeckett/vite-plugin-template'
+import { importUrlContent } from '@vaughnbeckett/vite-plugin-import-url-content'
 
 export default defineConfig({
   plugins: [
     Vue(),
-    VitePlugin(),
+    importUrlContent(),
   ]
 })

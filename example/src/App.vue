@@ -2,6 +2,8 @@
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
 import HelloWorld from './components/HelloWorld.vue'
+import textContent from 'fetch-text::https://vaughnbeckett.github.io/tld/part.list'
+import blobContent from 'fetch-blob::https://vaughnbeckett.github.io/tld/part.list'
 </script>
 
 <template>
@@ -14,6 +16,8 @@ import HelloWorld from './components/HelloWorld.vue'
     </a>
   </div>
   <HelloWorld msg="Vite + Vue" />
+  <p>{{ textContent.slice(0, 100) }} ...</p>
+  <p>{{ blobContent.slice(0, 100) }} ...</p>
 </template>
 
 <style scoped>
