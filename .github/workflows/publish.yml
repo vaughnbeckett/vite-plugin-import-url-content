@@ -1,0 +1,34 @@
+name: Release and publish
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ncipollo/release-action@v1
+        with:
+          skipIfReleaseExists: true
+          generateReleaseNotes: true
+          artifacts: false
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          registry-url: ${{ inputs.registry || 'https://registry.npmjs.org' }}
+          scope: "@${{ secrets.NPM_SCOPE || env.GITHUB_ACTOR }}"
+      - run: |-
+          set -e
+          npm install -g pnpm
+          pnpm install
+          pnpm run build
+          npm publish --access=public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

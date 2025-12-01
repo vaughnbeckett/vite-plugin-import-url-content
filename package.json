@@ -1,0 +1,33 @@
+{
+  "name": "@vaughnbeckett/vite-plugin-template",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Vite plugin template",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pkgroll",
+    "dev": "pnpm run build -- --watch",
+    "example:build": "pnpm -C example run build",
+    "lint": "eslint \"**/*.{vue,ts,js}\"",
+    "release": "npx bumpp --commit --tag --push && npm publish",
+    "typecheck": "vue-tsc --noEmit",
+    "up": "taze major -r -I"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^2.18.1",
+    "@types/node": "^20.12.12",
+    "eslint": "^9.3.0",
+    "eslint-plugin-format": "^0.1.1",
+    "pkgroll": "^2.1.1",
+    "sitemap-ts": "^1.10.1",
+    "taze": "^0.18.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}
