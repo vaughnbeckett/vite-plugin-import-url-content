@@ -1,7 +1,7 @@
 {
   "name": "@vaughnbeckett/vite-plugin-import-url-content",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vite plugin template",
   "license": "MIT",
   "main": "dist/index.js",
@@ -13,7 +13,9 @@
   "scripts": {
     "build": "pkgroll",
     "dev": "pnpm run build -- --watch",
-    "example:build": "pnpm -C example run build",
+    "example:install": "pnpm -C example install",
+    "example:dev": "pnpm run build -- --watch && pnpm -C example run dev",
+    "example:build": "pnpm run build -- --watch && pnpm -C example run build",
     "lint": "eslint \"**/*.{vue,ts,js}\"",
     "release": "npx bumpp --commit --tag --push && npm publish",
     "typecheck": "vue-tsc --noEmit",

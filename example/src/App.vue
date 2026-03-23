@@ -4,6 +4,7 @@
 import HelloWorld from './components/HelloWorld.vue'
 import textContent from 'fetch-text::https://vaughnbeckett.github.io/tld/part.list'
 import blobContent from 'fetch-blob::https://vaughnbeckett.github.io/tld/part.list'
+import refUrl from 'fetch-ref::https://vaughnbeckett.github.io/tld/part.list'
 </script>
 
 <template>
@@ -18,6 +19,7 @@ import blobContent from 'fetch-blob::https://vaughnbeckett.github.io/tld/part.li
   <HelloWorld msg="Vite + Vue" />
   <p>{{ textContent.slice(0, 100) }} ...</p>
   <p>{{ blobContent.slice(0, 100) }} ...</p>
+  <a :href="refUrl"> {{ refUrl }}</a>
 </template>
 
 <style scoped>
