@@ -27,12 +27,14 @@ export function importUrlContent() {
 
     resolveId(source: any) {
       if ([stringPrefix, blobPrefix, refPrefix].some(x => source.startsWith(x))) {
-        return source;
+        return '\0' + source;
       }
       return null;
     },
 
     async load(id: any) {
+      if (id.startsWith('\0'))
+        id = id.substring(1)
       const isStringImport = id.startsWith(stringPrefix);
       const isBlobImport = id.startsWith(blobPrefix);
       const isRefImport = id.startsWith(refPrefix);
