@@ -17,6 +17,9 @@ function getFileName(urlStr) {
   }
 }
 
+const virtualProtocol = '\0protocol:'
+const subProtocol = ':'
+
 export function importUrlContent() {
   const stringPrefix = 'fetch-text::';
   const blobPrefix = 'fetch-blob::';
@@ -26,15 +29,15 @@ export function importUrlContent() {
     name: 'vite-plugin-import-url-content',
 
     resolveId(source: any) {
-      if ([stringPrefix, blobPrefix, refPrefix].some(x => source.startsWith(x))) {
-        return '\0' + source;
-      }
+      if ([stringPrefix, blobPrefix, refPrefix].some((x) => source.startsWith(x)))
+        return virtualProtocol + encodeURIComponent(source);
       return null;
     },
 
     async load(id: any) {
-      if (id.startsWith('\0'))
-        id = id.substring(1)
+      if (!id.startsWith(virtualProtocol))
+        return null;
+      id = decodeURIComponent(id.substring(virtualProtocol.length));
       const isStringImport = id.startsWith(stringPrefix);
       const isBlobImport = id.startsWith(blobPrefix);
       const isRefImport = id.startsWith(refPrefix);
@@ -44,7 +47,13 @@ export function importUrlContent() {
       }
 
       const prefixLength = isStringImport ? stringPrefix.length : (isRefImport ? refPrefix.length : blobPrefix.length);
-      const url = id.slice(prefixLength);
+      let url = id.slice(prefixLength);
+
+      let hashMode = false
+      if (isRefImport && url.startsWith(subProtocol)) {
+        hashMode = true;
+        url = url.substring(subProtocol.length);
+      }
 
       if (!url.startsWith('http')) {
         throw new Error(`Invalid URL provided: ${url}. Must start with http:// or https://`);
@@ -75,9 +84,14 @@ export function importUrlContent() {
           const cacheSubDir = '_frc' //_fetch_ref_cache
           const fullCachePath = path.resolve(publicDir, cacheSubDir)
           const filename = getFileName(url)
-          const hash = crypto.createHash('md5').update(url).digest('hex')
-          const localFilePath = path.join(fullCachePath, hash, filename)
-          const publicUrl = `/${cacheSubDir}/${hash}/${filename}`
+          const hash = crypto.createHash('md5').update(
+              hashMode ? subProtocol + url : url).digest('hex')
+          let localFilePath = path.join(fullCachePath, hash)
+          let publicUrl = `/${cacheSubDir}/${hash}`
+          if (!hashMode){
+            localFilePath = path.join(localFilePath, filename)
+            publicUrl = `${publicUrl}/${filename}`
+          }
           fs.mkdirSync(path.dirname(localFilePath), {recursive: true})
           fs.writeFileSync(localFilePath, Buffer.from(buffer))
           return `export default ${JSON.stringify(publicUrl)};`
