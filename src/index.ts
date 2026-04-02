@@ -72,8 +72,8 @@ export function importUrlContent() {
         const escapedContent = JSON.stringify(content);
         return `const content = ${escapedContent}; export default content;`;
       } else {
-        const buffer = await response.arrayBuffer();
         if (isBlobImport) {
+          const buffer = await response.arrayBuffer();
           const mimeType = response.headers.get('content-type') || 'application/octet-stream';
           const base64Data = Buffer.from(buffer).toString('base64');
           const dataUri = `data:${mimeType};base64,${base64Data}`;
@@ -92,8 +92,11 @@ export function importUrlContent() {
             localFilePath = path.join(localFilePath, filename)
             publicUrl = `${publicUrl}/${filename}`
           }
-          fs.mkdirSync(path.dirname(localFilePath), {recursive: true})
-          fs.writeFileSync(localFilePath, Buffer.from(buffer))
+          if (!fs.existsSync(localFilePath)) {
+            const buffer = await response.arrayBuffer();
+            fs.mkdirSync(path.dirname(localFilePath), {recursive: true})
+            fs.writeFileSync(localFilePath, Buffer.from(buffer))
+          }
           return `export default ${JSON.stringify(publicUrl)};`
         }
       }
