@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 
-function getFileName(urlStr) {
+function getFileName(urlStr: any) {
   try {
     const url = new URL(urlStr);
     let pathname = url.pathname;
@@ -27,6 +27,7 @@ export function importUrlContent() {
 
   return {
     name: 'vite-plugin-import-url-content',
+    enforce: 'pre',
 
     resolveId(source: any) {
       if ([stringPrefix, blobPrefix, refPrefix].some((x) => source.startsWith(x)))
