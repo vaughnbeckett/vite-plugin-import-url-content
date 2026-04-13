@@ -82,7 +82,7 @@ export function importUrlContent() {
           return `const dataUri = ${escapedDataUri}; export default dataUri;`;
         } else {
           const publicDir = 'public'
-          const cacheSubDir = '_frc' //_fetch_ref_cache
+          const cacheSubDir = 'frc__' //_fetch_ref_cache
           const fullCachePath = path.resolve(publicDir, cacheSubDir)
           const filename = getFileName(url)
           const hash = crypto.createHash('md5').update(

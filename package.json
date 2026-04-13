@@ -1,7 +1,7 @@
 {
   "name": "@vaughnbeckett/vite-plugin-import-url-content",
   "type": "module",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Vite plugin template",
   "license": "MIT",
   "main": "dist/index.js",
