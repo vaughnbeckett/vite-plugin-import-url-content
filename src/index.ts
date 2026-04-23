@@ -31,6 +31,7 @@ export function importUrlContent(): Plugin {
   const cacheSubDir = 'fetch_ref_cache'
   const assetCache = new Map<string, { buffer: Buffer; contentType: string }>()
   let isServe = false
+  let viteServer: any
 
   return {
     name,
@@ -40,6 +41,7 @@ export function importUrlContent(): Plugin {
       isServe = config.command === 'serve' || config.mode === 'development'
     },
     configureServer(server) {
+      viteServer = server
       server.middlewares.use(async (req, res, next) => {
         if (req.url?.startsWith(`/@${cacheSubDir}/`)) {
           const urlPath = req.url.split('?')[0]
@@ -117,15 +119,17 @@ export function importUrlContent(): Plugin {
           let buffer;
           if (fs.existsSync(localFilePath)) {
             buffer = fs.readFileSync(localFilePath)
-          }else{
+          } else {
             buffer = Buffer.from(await response.arrayBuffer())
             fs.mkdirSync(path.dirname(localFilePath), {recursive: true})
             fs.writeFileSync(localFilePath, buffer)
           }
           if (isServe) {
+            const urls = viteServer?.resolvedUrls
+            const baseUrl = urls?.local[0] || urls?.network[0] || ''
             const virtualPath = `/@${cacheSubDir}/${hash}/${filename}`
             assetCache.set(virtualPath, { buffer, contentType:"application/octet-stream" })
-            return `export default ${JSON.stringify(virtualPath)}`
+            return `export default ${JSON.stringify(baseUrl.replace(/\/$/, "") + virtualPath)}`
           } else {
             const fileHandle = this.emitFile({
               type: 'asset',
