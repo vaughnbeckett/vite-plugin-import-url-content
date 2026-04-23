@@ -27,30 +27,30 @@ export function importUrlContent(): Plugin {
   const blobPrefix = 'fetch-blob::';
   const refPrefix = 'fetch-ref::';
 
-  const CACHE_DIR = path.resolve(`node_modules/.cache/${name}`)
-  const cacheSubDir = 'fetch_ref_cache'
-  const assetCache = new Map<string, { buffer: Buffer; contentType: string }>()
-  let viteServer: ViteDevServer | null = null
+  const resDir = '.res'
+  const workDir = `${resDir}/vpiuc`
+  let publicDir = '';
 
   return {
     name,
     enforce: 'pre',
-    configureServer(server) {
-      viteServer = server
-      server.middlewares.use(async (req, res, next) => {
-        if (req.url?.startsWith(`/@${cacheSubDir}/`)) {
-          const urlPath = req.url.split('?')[0]
-          const cached = assetCache.get(urlPath)
-          if (cached) {
-            res.setHeader('Content-Type', cached.contentType)
-            res.setHeader('Cache-Control', 'max-age=31536000')
-            return res.end(cached.buffer)
+    config(userConfig) {
+      publicDir = userConfig.publicDir || 'public'
+      const targetIgnore = `${publicDir}/${resDir}/**`
+      const existing = userConfig.server?.watch?.ignored
+      const newIgnored = Array.isArray(existing)
+          ? [...existing, targetIgnore]
+          : existing
+              ? [existing, targetIgnore]
+              : [targetIgnore]
+      return {
+        server: {
+          watch: {
+            ignored: newIgnored
           }
         }
-        next()
-      })
+      };
     },
-
     resolveId(source: any) {
       if ([stringPrefix, blobPrefix, refPrefix].some((x) => source.startsWith(x)))
         return virtualProtocol + encodeURIComponent(source);
@@ -103,38 +103,24 @@ export function importUrlContent(): Plugin {
           const escapedDataUri = JSON.stringify(dataUri);
           return `const dataUri = ${escapedDataUri}; export default dataUri;`;
         } else {
-          const fullCachePath = path.resolve(CACHE_DIR, cacheSubDir)
+          const fullCachePath = path.resolve(publicDir, workDir)
           const filename = getFileName(url)
           const hash = crypto.createHash('md5').update(
               hashMode ? subProtocol + url : url).digest('hex')
           let localFilePath = path.join(fullCachePath, hash)
+          let publicUrl = `/${workDir}/${hash}`
           if (!hashMode){
             localFilePath = path.join(localFilePath, filename)
+            publicUrl = `${publicUrl}/${filename}`
           }
-          let buffer;
-          if (fs.existsSync(localFilePath)) {
-            buffer = fs.readFileSync(localFilePath)
-          } else {
-            buffer = Buffer.from(await response.arrayBuffer())
+          if (!fs.existsSync(localFilePath)) {
+            const buffer = await response.arrayBuffer();
             fs.mkdirSync(path.dirname(localFilePath), {recursive: true})
-            fs.writeFileSync(localFilePath, buffer)
+            fs.writeFileSync(localFilePath, Buffer.from(buffer))
           }
-          if (viteServer) {
-            const urls = viteServer.resolvedUrls
-            const baseUrl = urls?.local[0] || urls?.network[0] || ''
-            const virtualPath = `/@${cacheSubDir}/${hash}/${filename}`
-            assetCache.set(virtualPath, { buffer, contentType:"application/octet-stream" })
-            return `export default ${JSON.stringify(baseUrl.replace(/\/$/, "") + virtualPath)}`
-          } else {
-            const fileHandle = this.emitFile({
-              type: 'asset',
-              name: filename,
-              source: buffer
-            })
-            return `export default import.meta.ROLLUP_FILE_URL_${fileHandle}`
-          }
+          return `export default ${JSON.stringify(publicUrl)};`
         }
       }
     }
-  }
+  };
 }
