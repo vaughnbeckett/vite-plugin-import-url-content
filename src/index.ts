@@ -1,3 +1,4 @@
+import type { Plugin } from 'vite'
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
@@ -20,14 +21,38 @@ function getFileName(urlStr: any) {
 const virtualProtocol = '\0protocol:'
 const subProtocol = ':'
 
-export function importUrlContent() {
+export function importUrlContent(): Plugin {
+  const name = 'vite-plugin-import-url-content'
   const stringPrefix = 'fetch-text::';
   const blobPrefix = 'fetch-blob::';
   const refPrefix = 'fetch-ref::';
 
+  const CACHE_DIR = path.resolve(`node_modules/.cache/${name}`)
+  const cacheSubDir = 'fetch_ref_cache'
+  const assetCache = new Map<string, { buffer: Buffer; contentType: string }>()
+  let isBuild = false
+
   return {
-    name: 'vite-plugin-import-url-content',
+    name,
     enforce: 'pre',
+
+    configResolved(config) {
+      isBuild = config.command === 'build'
+    },
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url?.startsWith(`/@${cacheSubDir}/`)) {
+          const urlPath = req.url.split('?')[0]
+          const cached = assetCache.get(urlPath)
+          if (cached) {
+            res.setHeader('Content-Type', cached.contentType)
+            res.setHeader('Cache-Control', 'max-age=31536000')
+            return res.end(cached.buffer)
+          }
+        }
+        next()
+      })
+    },
 
     resolveId(source: any) {
       if ([stringPrefix, blobPrefix, refPrefix].some((x) => source.startsWith(x)))
@@ -81,26 +106,36 @@ export function importUrlContent() {
           const escapedDataUri = JSON.stringify(dataUri);
           return `const dataUri = ${escapedDataUri}; export default dataUri;`;
         } else {
-          const publicDir = 'public'
-          const cacheSubDir = 'frc__' //_fetch_ref_cache
-          const fullCachePath = path.resolve(publicDir, cacheSubDir)
+          const fullCachePath = path.resolve(CACHE_DIR, cacheSubDir)
           const filename = getFileName(url)
           const hash = crypto.createHash('md5').update(
               hashMode ? subProtocol + url : url).digest('hex')
           let localFilePath = path.join(fullCachePath, hash)
-          let publicUrl = `/${cacheSubDir}/${hash}`
           if (!hashMode){
             localFilePath = path.join(localFilePath, filename)
-            publicUrl = `${publicUrl}/${filename}`
           }
-          if (!fs.existsSync(localFilePath)) {
-            const buffer = await response.arrayBuffer();
+          let buffer;
+          if (fs.existsSync(localFilePath)) {
+            buffer = fs.readFileSync(localFilePath)
+          }else{
+            buffer = Buffer.from(await response.arrayBuffer())
             fs.mkdirSync(path.dirname(localFilePath), {recursive: true})
-            fs.writeFileSync(localFilePath, Buffer.from(buffer))
+            fs.writeFileSync(localFilePath, buffer)
           }
-          return `export default ${JSON.stringify(publicUrl)};`
+          if (isBuild) {
+            const fileHandle = this.emitFile({
+              type: 'asset',
+              name: filename,
+              source: buffer
+            })
+            return `export default import.meta.ROLLUP_FILE_URL_${fileHandle}`
+          } else {
+            const virtualPath = `/@${cacheSubDir}/${hash}/${filename}`
+            assetCache.set(virtualPath, { buffer, contentType:"application/octet-stream" })
+            return `export default ${JSON.stringify(virtualPath)}`
+          }
         }
       }
     }
-  };
+  }
 }
