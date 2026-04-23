@@ -30,14 +30,14 @@ export function importUrlContent(): Plugin {
   const CACHE_DIR = path.resolve(`node_modules/.cache/${name}`)
   const cacheSubDir = 'fetch_ref_cache'
   const assetCache = new Map<string, { buffer: Buffer; contentType: string }>()
-  let isBuild = false
+  let isServe = false
 
   return {
     name,
     enforce: 'pre',
 
     configResolved(config) {
-      isBuild = config.command === 'build'
+      isServe = config.command === 'serve' || config.mode === 'development'
     },
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
@@ -122,17 +122,17 @@ export function importUrlContent(): Plugin {
             fs.mkdirSync(path.dirname(localFilePath), {recursive: true})
             fs.writeFileSync(localFilePath, buffer)
           }
-          if (isBuild) {
+          if (isServe) {
+            const virtualPath = `/@${cacheSubDir}/${hash}/${filename}`
+            assetCache.set(virtualPath, { buffer, contentType:"application/octet-stream" })
+            return `export default ${JSON.stringify(virtualPath)}`
+          } else {
             const fileHandle = this.emitFile({
               type: 'asset',
               name: filename,
               source: buffer
             })
             return `export default import.meta.ROLLUP_FILE_URL_${fileHandle}`
-          } else {
-            const virtualPath = `/@${cacheSubDir}/${hash}/${filename}`
-            assetCache.set(virtualPath, { buffer, contentType:"application/octet-stream" })
-            return `export default ${JSON.stringify(virtualPath)}`
           }
         }
       }
