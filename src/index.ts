@@ -1,4 +1,4 @@
-import type { Plugin } from 'vite'
+import type { Plugin, ViteDevServer } from 'vite'
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
@@ -30,16 +30,11 @@ export function importUrlContent(): Plugin {
   const CACHE_DIR = path.resolve(`node_modules/.cache/${name}`)
   const cacheSubDir = 'fetch_ref_cache'
   const assetCache = new Map<string, { buffer: Buffer; contentType: string }>()
-  let isServe = false
-  let viteServer: any
+  let viteServer: ViteDevServer | null = null
 
   return {
     name,
     enforce: 'pre',
-
-    configResolved(config) {
-      isServe = config.command === 'serve' || config.mode === 'development'
-    },
     configureServer(server) {
       viteServer = server
       server.middlewares.use(async (req, res, next) => {
@@ -124,8 +119,8 @@ export function importUrlContent(): Plugin {
             fs.mkdirSync(path.dirname(localFilePath), {recursive: true})
             fs.writeFileSync(localFilePath, buffer)
           }
-          if (isServe) {
-            const urls = viteServer?.resolvedUrls
+          if (viteServer) {
+            const urls = viteServer.resolvedUrls
             const baseUrl = urls?.local[0] || urls?.network[0] || ''
             const virtualPath = `/@${cacheSubDir}/${hash}/${filename}`
             assetCache.set(virtualPath, { buffer, contentType:"application/octet-stream" })
