@@ -27,7 +27,7 @@ export function importUrlContent(): Plugin {
   const blobPrefix = 'fetch-blob::';
   const refPrefix = 'fetch-ref::';
 
-  const resDir = '.res'
+  const resDir = 'res.imports'
   const workDir = `${resDir}/vpiuc`
   let publicDir = '';
 
